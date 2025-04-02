@@ -1,0 +1,54 @@
+name: eval_online
+services:
+  fastapi_server:
+    build:
+      context: /home/cc/eval-monitor-chi/fastapi_pt
+      dockerfile: Dockerfile
+    container_name: fastapi_server
+    ports:
+      - "8000:8000"  # for HTTP requests
+
+  flask:
+    build:
+      context: https://github.com/teaching-on-testbeds/gourmetgram.git#fastapi
+    container_name: flask
+    ports:
+      - "5000:5000"
+    environment:
+      - FASTAPI_SERVER_URL=http://fastapi_server:8000 # let Flask app know where to access the inference endpoint
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+  jupyter:
+    image: quay.io/jupyter/pytorch-notebook:pytorch-2.5.1
+    container_name: jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      - FOOD11_DATA_DIR=/mnt/Food-11
+    volumes:
+      - /home/cc/eval-monitor-chi/workspace:/home/jovyan/work # mount workspace
+      - food11:/mnt
+    command: >
+      bash -c "python3 -m pip install alibi-detect && start-notebook.sh"
+
+volumes:
+  food11:
+    external: true
