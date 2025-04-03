@@ -213,7 +213,7 @@ Then, to populate it with data, run
 
 ```bash
 # runs on node-eval
-docker compose -f serve-model-chi/docker/docker-compose-data.yaml up -d
+docker compose -f eval-online-chi/docker/docker-compose-data.yaml up -d
 ```
 
 This will run a temporary container that downloads the Food-11 dataset, organizes it in the volume, and then stops. It may take a minute or two. You can verify with 
@@ -233,6 +233,7 @@ docker run --rm -it -v food11:/mnt alpine ls -l /mnt/Food-11/
 ```
 
 it should show "evaluation", "validation", and "training" subfolders.
+
 
 
 
