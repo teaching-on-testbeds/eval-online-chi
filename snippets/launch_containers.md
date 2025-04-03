@@ -9,7 +9,7 @@ Inside the SSH session, bring up the Flask, FastAPI, Prometheus, and Grafana ser
 
 ```bash
 # runs on node-eval-online
-docker compose -f eval-monitor-chi/docker/docker-compose-prometheus.yaml up -d
+docker compose -f eval-online-chi/docker/docker-compose-prometheus.yaml up -d
 ```
 
 Run

@@ -161,7 +161,7 @@ Now, we can use `python-chi` to execute commands on the instance, to set it up. 
 
 
 ```python
-s.execute("git clone https://github.com/teaching-on-testbeds/eval-monitor-chi")
+s.execute("git clone https://github.com/teaching-on-testbeds/eval-online-chi")
 ```
 
 
@@ -243,7 +243,7 @@ Inside the SSH session, bring up the Flask, FastAPI, Prometheus, and Grafana ser
 
 ```bash
 # runs on node-eval-online
-docker compose -f eval-monitor-chi/docker/docker-compose-prometheus.yaml up -d
+docker compose -f eval-online-chi/docker/docker-compose-prometheus.yaml up -d
 ```
 
 Run
@@ -660,7 +660,7 @@ We'll need to make a few changes to our FastAPI service, since the auto-instrume
 
 ```
 # runs on node-eval-online
-nano eval-monitor-chi/fastapi_pt/requirements.txt
+nano eval-online-chi/fastapi_pt/requirements.txt
 ```
 
 and add `prometheus-client`. Save this file with Ctrl+O and Enter, then quit `nano` with Ctrl+X.
@@ -669,7 +669,7 @@ and add `prometheus-client`. Save this file with Ctrl+O and Enter, then quit `na
 
 ```
 # runs on node-eval-online
-nano eval-monitor-chi/fastapi_pt/app.py
+nano eval-online-chi/fastapi_pt/app.py
 ```
 
 Near the top, add
@@ -713,14 +713,14 @@ Re-build the container image with
 
 ```bash
 # runs on node-eval-online
-docker compose -f eval-monitor-chi/docker/docker-compose-prometheus.yaml build fastapi_server
+docker compose -f eval-online-chi/docker/docker-compose-prometheus.yaml build fastapi_server
 ```
 
 and then recreate it with
 
 ```bash
 # runs on node-eval-online
-docker compose -f eval-monitor-chi/docker/docker-compose-prometheus.yaml up -d
+docker compose -f eval-online-chi/docker/docker-compose-prometheus.yaml up -d
 ```
 
 
@@ -955,7 +955,7 @@ Finally, we should also monitor the containers themselves. We'll use [`cAdvisor`
 
 ```bash
 # runs on node-eval-online
-nano eval-monitor-chi/docker/docker-compose-prometheus.yaml
+nano eval-online-chi/docker/docker-compose-prometheus.yaml
 ```
 
 then add this to the end of the `services` section (before the `volumes` section):
@@ -980,7 +980,7 @@ Save the file with Ctrl+O and Enter, then Ctrl+X to exit.
 
 ```bash
 # runs on node-eval-online
-nano eval-monitor-chi/docker/prometheus.yml
+nano eval-online-chi/docker/prometheus.yml
 ```
 
 and at the end, in the `scrape_configs` section, add:
@@ -997,14 +997,14 @@ Save the file with Ctrl+O and Enter, then Ctrl+X to exit.
 
 ```bash
 # runs on node-eval-online
-docker compose -f eval-monitor-chi/docker/docker-compose-prometheus.yaml up -d
+docker compose -f eval-online-chi/docker/docker-compose-prometheus.yaml up -d
 ```
 
 and force the Prometheus container to restart with its new configuration:
 
 ```bash
 # runs on node-eval-online
-docker compose -f eval-monitor-chi/docker/docker-compose-prometheus.yaml up prometheus --force-recreate -d
+docker compose -f eval-online-chi/docker/docker-compose-prometheus.yaml up prometheus --force-recreate -d
 ```
 
 **Note**: `cAdvisor` has its own web UI. You can see it at 
@@ -1329,14 +1329,14 @@ Now, we are ready to modify our FastAPI service!
 
 ```bash
 # runs on node-eval-online
-cp -R eval-monitor-chi/workspace/cd eval-monitor-chi/fastapi_pt/
+cp -R eval-online-chi/workspace/cd eval-online-chi/fastapi_pt/
 ```
 
 2) Open the FastAPI `app.py` to edit it:
 
 ```bash
 # runs on node-eval-online
-nano eval-monitor-chi/fastapi_pt/app.py
+nano eval-online-chi/fastapi_pt/app.py
 ```
 
 Near the top of this file, add the new import:
@@ -1404,7 +1404,7 @@ Save the file with Ctrl+O and Enter, then Ctrl+X to exit.
 
 ```bash
 # runs on node-eval-online
-nano eval-monitor-chi/fastapi_pt/requirements.txt
+nano eval-online-chi/fastapi_pt/requirements.txt
 ```
 
 and add 
@@ -1419,14 +1419,14 @@ Save the file with Ctrl+O and Enter, then Ctrl+X to exit.
 
 ```bash
 # runs on node-eval-online
-docker compose -f eval-monitor-chi/docker/docker-compose-prometheus.yaml build fastapi_server
+docker compose -f eval-online-chi/docker/docker-compose-prometheus.yaml build fastapi_server
 ```
 
 and then recreate it with
 
 ```bash
 # runs on node-eval-online
-docker compose -f eval-monitor-chi/docker/docker-compose-prometheus.yaml up -d
+docker compose -f eval-online-chi/docker/docker-compose-prometheus.yaml up -d
 ```
 
 Loading the FastAPI service takes a little longer, now that the change detector is part of it - use
@@ -1609,7 +1609,7 @@ When you have finished with this section, bring down these services with
 
 ```bash
 # runs on node-eval-online
-docker compose -f eval-monitor-chi/docker/docker-compose-prometheus.yaml up -d
+docker compose -f eval-online-chi/docker/docker-compose-prometheus.yaml up -d
 ```
 
 

@@ -2,7 +2,7 @@ name: eval_online
 services:
   fastapi_server:
     build:
-      context: /home/cc/eval-monitor-chi/fastapi_pt
+      context: /home/cc/eval-online-chi/fastapi_pt
       dockerfile: Dockerfile
     container_name: fastapi_server
     ports:
@@ -44,7 +44,7 @@ services:
     environment:
       - FOOD11_DATA_DIR=/mnt/Food-11
     volumes:
-      - /home/cc/eval-monitor-chi/workspace:/home/jovyan/work # mount workspace
+      - /home/cc/eval-online-chi/workspace:/home/jovyan/work # mount workspace
       - food11:/mnt
     command: >
       bash -c "python3 -m pip install alibi-detect && start-notebook.sh"
