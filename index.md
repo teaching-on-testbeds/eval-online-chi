@@ -2,7 +2,7 @@
 
 # Online evaluation of ML systems
 
-In this tutorial, we will practice selected techniques for evaluating machine learning systems, and then monitoring them in production. We will:
+In this tutorial, we will practice selected techniques for evaluating machine learning systems, and then monitoring them in production.
 
 The lifecycle of a model may look something like this:
 
