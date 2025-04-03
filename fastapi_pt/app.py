@@ -9,7 +9,6 @@ from PIL import Image
 import io
 import numpy as np
 from prometheus_fastapi_instrumentator import Instrumentator
-from werkzeug.exceptions import HTTPException
 
 app = FastAPI(
     title="Food Classification API",
