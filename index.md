@@ -45,10 +45,10 @@ These will help us monitor operational metrics, like response time or number of 
 ## Open this experiment on Trovi
 
 
-At the beginning of your GPU lease time, you will continue with the next step, in which you bring up and configure a VM instance! To begin this step, open this experiment on Trovi:
+When you are ready to begin, you will continue with the next step, in which you bring up and configure a VM instance! To begin this step, open this experiment on Trovi:
 
 * Use this link: [Online evaluation of ML systems](https://chameleoncloud.org/experiment/share/4e7c43ef-31be-46c5-bb64-4d358608b3b8) on Trovi
-* Then, click “Launch on Chameleon”. This will start a new Jupyter server for you, with the experiment materials already in it, including the notebok to bring up the bare metal server.
+* Then, click “Launch on Chameleon”. This will start a new Jupyter server for you, with the experiment materials already in it, including the notebok to bring up the VM instance.
 
 
 
@@ -303,10 +303,10 @@ from PIL import Image
 
 To monitor a service using Prometheus, it needs to expose an HTTP endpoint (by convention, `/metrics`) that Prometheus can scrape. For standard frameworks like Flask or FastAPI (or Triton inference server, for that matter) it is easy to use existing libraries to quickly instrument a service. 
 
-We have already started an updated FastAPI service, which looks very similar to one we've developed previously, but now:
+We have already started an [updated FastAPI service](https://github.com/teaching-on-testbeds/eval-online-chi/tree/main/fastapi_pt), which looks very similar to one we've developed previously, but now:
 
 * in `requirements.txt`, we've added the `prometheus-fastapi-instrumentator` library as a dependency
-* and inside the app itself, we've added this to the beginning:
+* and inside [the app itself](https://github.com/teaching-on-testbeds/eval-online-chi/blob/main/fastapi_pt/app.py), we've added this to the beginning:
 
 ```python
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -455,7 +455,7 @@ Sign in using the username `admin` and password `admin`. You will be prompted to
 Then, you'll configure it to connect to Prometheus: 
 
 * From the menu, choose: "Connections" > "Data Sources". 
-* Click "Add data source" and choose "Prometheus". 
+* Click "Add data source" and choose "Prometheus", then "Add new data source". 
 * Set URL to http://prometheus:9090.
 * Click "Save & Test"
 
@@ -503,7 +503,7 @@ Let's add another panel, showing the median, 95th percentile, and 99th percentil
 * When you are satisfied with the appearance, click "Save dashboard" to save your changes.
 
 
-Return to the dashboard. You can resize panels and drag them to place them in different positions.
+Return to the dashboard. You can resize panels and drag them to place them in different positions for better visibility.
 
 
 
@@ -525,6 +525,8 @@ rate(http_requests_total{handler="/predict", status="4xx"}[1m])
 # set this up as a second query in the same visualization
 rate(http_requests_total{handler="/predict", status="5xx"}[1m])
 ```
+
+Return to the dashboard. You can resize panels and drag them to place them in different positions for better visibility.
 
 Now, let's generate variable load - we will ramp up, then down, the load on the FastAPI service. While the cell below is running, observe the effect on your Grafana dashboard (you can set the dashboard to auto refresh with a frequency of 5 seconds, to make it easier to monitor!):
 
