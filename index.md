@@ -435,7 +435,7 @@ histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{handler="/pred
 or, to get a sense of the worst-case user experience, we can check the 95th percentile using the query:
 
 ```
-histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{handler="/predict", job="food11"}[1m]))
+histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{handler="/predict", job="food11"}[1m]))
 ```
 
 
