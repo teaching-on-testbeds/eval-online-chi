@@ -1612,7 +1612,7 @@ When you have finished with this section, bring down these services with
 
 ```bash
 # runs on node-eval-online
-docker compose -f eval-online-chi/docker/docker-compose-prometheus.yaml up -d
+docker compose -f eval-online-chi/docker/docker-compose-prometheus.yaml down
 ```
 
 
