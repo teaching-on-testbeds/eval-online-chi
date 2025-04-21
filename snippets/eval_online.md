@@ -1447,7 +1447,7 @@ for _ in range(1000):
 
 ::: {.cell .markdown}
 
-When it is done, take a screenshot of the "Food11 Drift Monitoring" dashboard for later reference.
+When you see that drift events are detected, take a screenshot of the "Food11 Drift Monitoring" dashboard for later reference.
 
 :::
 
