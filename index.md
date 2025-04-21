@@ -370,7 +370,7 @@ but using the floating IP assigned to our instance in place of `A.B.C.D`. This w
 
 First, let's find out about the services that this Prometheus instance is monitoring. From the menu, choose "Status" > "Targets" and note the FastAPI endpoint and its status.
 
-Next, let's look at some of the metrics data. Prometheus uses a query language called PromQL to query metrics, but we can find some metrics of interest without knowing any PromQL. From the menu, choose "Graph". Then, click on the globe icon 🌎 near the query bar to see some of the available metrics we can query. Find "http_requests_total" in the list and click on it to select it, and click "Execute".
+Next, let's look at some of the metrics data. Prometheus uses a query language called PromQL to query metrics, but we can find some metrics of interest without knowing any PromQL. From the menu, choose "Graph". Then, click on the ⋮ on the right side the query bar and choose "Explore metrics" to see some of the available metrics we can query. Find "http_requests_total" in the list and click on it to select it, and click "Execute".
 
 Prometheus will show us metrics related to all endpoints of the FastAPI service, but we are primarily interested in the metrics associated with the "/predict" endpoint. Copy the line
 
