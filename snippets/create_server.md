@@ -15,31 +15,61 @@ Run the following cell, and make sure the correct project is selected.
 
 ::: {.cell .code}
 ```python
-from chi import server, context
+from chi import server, context, lease
 import chi, os, time, datetime
 
 context.version = "1.0" 
 context.choose_project()
 context.choose_site(default="KVM@TACC")
+
+username = os.getenv('USER') # all exp resources will have this prefix
 ```
 :::
 
 ::: {.cell .markdown}
 
-We will use bring up a `m1.medium` flavor server with the `CC-Ubuntu24.04` disk image. 
+We will reserve and bring up an `m1.medium` instance with the `CC-Ubuntu24.04` disk image. 
 
-> **Note**: the following cell brings up a server only if you don't already have one with the same name! (Regardless of its error state.) If you have a server in ERROR state already, delete it first in the Horizon GUI before you run this cell.
+> **Note**: the following cells bring up a server only if you don't already have one with the same name! (Regardless of its error state.) If you have a lease or a server in ERROR state already, delete it first in the Horizon GUI before you run these cells.
+
+:::
+
+
+::: {.cell .markdown}
+
+First we will reserve the VM instance for 6 hours, starting now:
 
 :::
 
 
 ::: {.cell .code}
 ```python
-username = os.getenv('USER') # all exp resources will have this prefix
+l = lease.Lease(f"lease-eval-online-{username}", duration=datetime.timedelta(hours=6))
+l.add_flavor_reservation(id=chi.server.get_flavor_id("m1.medium"), amount=1)
+l.submit(idempotent=True)
+```
+:::
+
+
+::: {.cell .code}
+```python
+l.show()
+```
+:::
+
+
+::: {.cell .markdown}
+
+Now we can launch an instance using that lease:
+
+:::
+
+::: {.cell .code}
+```python
 s = server.Server(
     f"node-eval-online-{username}", 
     image_name="CC-Ubuntu24.04",
-    flavor_name="m1.medium"
+    flavor_name=l.get_reserved_flavors()[0].name
 )
 s.submit(idempotent=True)
 ```
