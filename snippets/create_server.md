@@ -75,39 +75,6 @@ s.submit(idempotent=True)
 ```
 :::
 
-
-::: {.cell .markdown}
-
-Then, we'll associate a floating IP with the instance:
-
-:::
-
-::: {.cell .code}
-```python
-s.associate_floating_ip()
-```
-:::
-
-::: {.cell .code}
-```python
-s.refresh()
-s.check_connectivity()
-```
-:::
-
-::: {.cell .markdown}
-
-In the output below, make a note of the floating IP that has been assigned to your instance (in the "Addresses" row).
-
-:::
-
-::: {.cell .code}
-```python
-s.refresh()
-s.show(type="widget")
-```
-:::
-
 ::: {.cell .markdown}
 
 By default, all connections to VM resources are blocked, as a security measure.  We need to attach one or more "security groups" to our VM resource, to permit access over the Internet to specified ports.
@@ -150,6 +117,38 @@ print(f"updated security groups: {[group.name for group in nova_server.list_secu
 ```
 :::
 
+
+::: {.cell .markdown}
+
+Then, we'll associate a floating IP with the instance:
+
+:::
+
+::: {.cell .code}
+```python
+s.associate_floating_ip()
+```
+:::
+
+::: {.cell .code}
+```python
+s.refresh()
+s.check_connectivity()
+```
+:::
+
+::: {.cell .markdown}
+
+In the output below, make a note of the floating IP that has been assigned to your instance (in the "Addresses" row).
+
+:::
+
+::: {.cell .code}
+```python
+s.refresh()
+s.show(type="widget")
+```
+:::
 
 
 
