@@ -1657,7 +1657,7 @@ Run the following cell, and make sure the correct project is selected.
 
 ```python
 # runs on Chameleon Jupyter environment
-from chi import server, context
+from chi import server, context, lease
 import chi, os, time, datetime
 
 context.version = "1.0" 
@@ -1671,6 +1671,8 @@ context.choose_site(default="KVM@TACC")
 username = os.getenv('USER') # all exp resources will have this prefix
 s = server.get_server(f"node-eval-online-{username}")
 s.delete()
+l = lease.get_lease(f"lease-eval-online-{username}")
+l.delete()
 ```
 
 
