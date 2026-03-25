@@ -1132,6 +1132,7 @@ Let's try this now. First, we will grab a batch of the training data to use as t
 model_path = "models/food11.pth"  
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = torch.load(model_path, map_location=device, weights_only=False)
+model = model.to(device)
 _ = model.eval()  
 ```
 
