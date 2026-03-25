@@ -27,7 +27,6 @@ index.md: snippets/*.md
 		> index.tmp.md
 	grep -v '^:::' index.tmp.md > index.md
 	rm index.tmp.md
-	cat snippets/footer.md >> index.md
 
 0_intro.ipynb: snippets/intro.md
 	pandoc --resource-path=../ --embed-resources --standalone --wrap=none \
