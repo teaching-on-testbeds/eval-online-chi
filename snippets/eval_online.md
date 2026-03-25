@@ -49,14 +49,12 @@ We have already started an [updated FastAPI service](https://github.com/teaching
 * and inside [the app itself](https://github.com/teaching-on-testbeds/eval-online-chi/blob/main/fastapi_pt/app.py), we've added this to the beginning:
 
 ```python
-# runs on node-eval-online
 from prometheus_fastapi_instrumentator import Instrumentator
 ```
 
 * and this to the end:
 
 ```python
-# runs on node-eval-online
 Instrumentator().instrument(app).expose(app)
 ```
 
@@ -448,14 +446,12 @@ nano eval-online-chi/fastapi_pt/app.py
 Near the top, add
 
 ```python
-# runs on node-eval-online
 from prometheus_client import Histogram, Counter
 ```
 
 and then
 
 ```python
-# runs on node-eval-online
 # Histogram for prediction confidence
 confidence_histogram = Histogram(
     "prediction_confidence",
@@ -475,7 +471,6 @@ Scroll to the "Run inference" section, and just before the inference result is r
 
 
 ```python
-# runs on node-eval-online
         # Update metrics
         confidence_histogram.observe(confidence)
         class_counter.labels(class_name=classes[predicted_class]).inc()
@@ -1185,14 +1180,12 @@ nano eval-online-chi/fastapi_pt/app.py
 Near the top of this file, add the new import:
 
 ```python
-# runs on node-eval-online
 from alibi_detect.saving import load_detector
 ```
 
 and read in the change detector:
 
 ```python
-# runs on node-eval-online
 # Load the change detector from file
 cd = load_detector("cd")
 ```
@@ -1200,7 +1193,6 @@ cd = load_detector("cd")
 then, add the new metrics that we will report to Prometheus - 
 
 ```python
-# runs on node-eval-online
 # Counter for drift events
 drift_event_counter = Counter(
         'drift_events_total', 
@@ -1219,7 +1211,6 @@ We are going to do drift detection asynchronously - so that the user does not ha
 Near the top, add another import:
 
 ```python
-# runs on node-eval-online
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=2)  # can adjust max_workers as needed
 ```
@@ -1227,7 +1218,6 @@ executor = ThreadPoolExecutor(max_workers=2)  # can adjust max_workers as needed
 and, right below the definition of the Prometheus metrics, add a drift detection function:
 
 ```python
-# runs on node-eval-online
 def detect_drift_async(cd, x_np):
     cd_pred = cd.predict(x_np)
     test_stat = cd_pred['data']['test_stat']
@@ -1241,7 +1231,6 @@ def detect_drift_async(cd, x_np):
 Then, in the predict endpoint, right before `return` - add (with the appropriate indentation level)
 
 ```python
-# runs on node-eval-online
 # Submit to async drift detection thread
 x_np = image.squeeze(0).cpu().numpy()
 executor.submit(detect_drift_async, cd, x_np)
