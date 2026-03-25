@@ -65,7 +65,7 @@ Run the following cell, and make sure the correct project is selected.
 
 
 ```python
-from chi import server, context, lease
+from chi import server, context, lease, network
 import chi, os, time, datetime
 
 context.version = "1.0" 
@@ -133,19 +133,16 @@ security_groups = [
 
 
 ```python
-# configure openstacksdk for actions unsupported by python-chi
-os_conn = chi.clients.connection()
-nova_server = chi.nova().servers.get(s.id)
-
 for sg in security_groups:
+  secgroup = network.SecurityGroup({
+      'name': sg['name'],
+      'description': sg['description'],
+  })
+  secgroup.add_rule(direction='ingress', protocol='tcp', port=sg['port'])
+  secgroup.submit(idempotent=True)
+  s.add_security_group(sg['name'])
 
-  if not os_conn.get_security_group(sg['name']):
-      os_conn.create_security_group(sg['name'], sg['description'])
-      os_conn.create_security_group_rule(sg['name'], port_range_min=sg['port'], port_range_max=sg['port'], protocol='tcp', remote_ip_prefix='0.0.0.0/0')
-
-  nova_server.add_security_group(sg['name'])
-
-print(f"updated security groups: {[group.name for group in nova_server.list_security_group()]}")
+print(f"updated security groups: {[sg['name'] for sg in security_groups]}")
 ```
 
 
@@ -211,7 +208,6 @@ where
 
 * in place of `~/.ssh/id_rsa_chameleon`, substitute the path to your own key that you had uploaded to KVM@TACC
 * in place of `A.B.C.D`, use the floating IP address you just associated to your instance.
-
 
 
 
