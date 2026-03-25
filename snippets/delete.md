@@ -13,6 +13,7 @@ Run the following cell, and make sure the correct project is selected.
 
 ::: {.cell .code}
 ```python
+# runs on Chameleon Jupyter environment
 from chi import server, context
 import chi, os, time, datetime
 
@@ -25,9 +26,9 @@ context.choose_site(default="KVM@TACC")
 
 ::: {.cell .code}
 ```python
+# runs on Chameleon Jupyter environment
 username = os.getenv('USER') # all exp resources will have this prefix
 s = server.get_server(f"node-eval-online-{username}")
 s.delete()
 ```
 :::
-

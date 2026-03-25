@@ -19,7 +19,7 @@ In this section, we will practice online evaluation of a model! After you finish
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online-online
+# runs on Jupyter container on node-eval-online
 import os, base64, time, random, requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import torch
@@ -49,12 +49,14 @@ We have already started an [updated FastAPI service](https://github.com/teaching
 * and inside [the app itself](https://github.com/teaching-on-testbeds/eval-online-chi/blob/main/fastapi_pt/app.py), we've added this to the beginning:
 
 ```python
+# runs on node-eval-online
 from prometheus_fastapi_instrumentator import Instrumentator
 ```
 
 * and this to the end:
 
 ```python
+# runs on node-eval-online
 Instrumentator().instrument(app).expose(app)
 ```
 
@@ -139,7 +141,7 @@ To see more, let's generate some more requests. We'll send some requests directl
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online-online
+# runs on Jupyter container on node-eval-online
 image_path = "test_image.jpeg"
 with open(image_path, 'rb') as f:
     image_bytes = f.read()
@@ -149,7 +151,7 @@ encoded_str =  base64.b64encode(image_bytes).decode("utf-8")
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 FASTAPI_URL = "http://fastapi_server:8000/predict"
 payload = {"image": encoded_str}
 num_requests = 100
@@ -286,7 +288,7 @@ Now, let's generate variable load - we will ramp up, then down, the load on the 
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 FASTAPI_URL = "http://fastapi_server:8000/predict"
 payload = {"image": encoded_str}
 
@@ -372,7 +374,7 @@ Let's generate some error responses to trigger this alert. We're executing a sim
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 FASTAPI_URL = "http://fastapi_server:8000/predict"
 
 load_pattern = [1, 3, 5, 10, 5, 3, 1]  # number of concurrent requests in each step
@@ -446,12 +448,14 @@ nano eval-online-chi/fastapi_pt/app.py
 Near the top, add
 
 ```python
+# runs on node-eval-online
 from prometheus_client import Histogram, Counter
 ```
 
 and then
 
 ```python
+# runs on node-eval-online
 # Histogram for prediction confidence
 confidence_histogram = Histogram(
     "prediction_confidence",
@@ -471,6 +475,7 @@ Scroll to the "Run inference" section, and just before the inference result is r
 
 
 ```python
+# runs on node-eval-online
         # Update metrics
         confidence_histogram.observe(confidence)
         class_counter.labels(class_name=classes[predicted_class]).inc()
@@ -654,7 +659,7 @@ Let's generate some requests to populate this dashboard with meaningful data:
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 food_11_data_dir = os.getenv("FOOD11_DATA_DIR", "Food-11")
 test_dataset = datasets.ImageFolder(root=os.path.join(food_11_data_dir, 'evaluation'))
 image_paths = [sample[0] for sample in test_dataset.samples]
@@ -702,7 +707,7 @@ Immediately after that, run the cell below, to send prediction requests for the 
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 image_dir = "cake_looks_like"
 image_paths = [
     os.path.join(image_dir, fname)
@@ -822,7 +827,7 @@ Now, you'll see the "cAdvisor Docker Insights" dashboard in the "Dashboards" sec
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 FASTAPI_URL = "http://fastapi_server:8000/predict"
 payload = {"image": encoded_str}
 
@@ -891,7 +896,7 @@ Let's try this now. First, we will grab a batch of the training data to use as t
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 model_path = "models/food11.pth"  
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = torch.load(model_path, map_location=device, weights_only=False)
@@ -901,7 +906,7 @@ _ = model.eval()
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 food_11_data_dir = os.getenv("FOOD11_DATA_DIR", "Food-11")
 val_test_transform = transforms.Compose([
     transforms.Resize((224, 224)),
@@ -921,7 +926,7 @@ val_loader    = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 x_ref, y_ref = next(iter(train_loader))
 print("x_ref shape:", x_ref.shape)
 ```
@@ -929,7 +934,7 @@ print("x_ref shape:", x_ref.shape)
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 x_new, y_new = next(iter(val_loader))
 print("x_new shape:", x_new.shape)
 ```
@@ -948,7 +953,7 @@ Now, we will set up our drift detector.
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 from alibi_detect.cd.pytorch import HiddenOutput, preprocess_drift
 from alibi_detect.cd import MMDDrift, MMDDriftOnline
 from functools import partial
@@ -957,7 +962,7 @@ from functools import partial
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 
 # Use `HiddenOutput` from alibi_detect to extract features from the last layer of our classifier before the "head"
 feature_model = HiddenOutput(model, layer=-1) 
@@ -982,7 +987,7 @@ Get another batch of training data, and pass it to the detector -
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 x_tr, y_tr = next(iter(train_loader))
 cd_preds = cd.predict(x_tr)
 cd_preds
@@ -1000,7 +1005,7 @@ To use this drift detector in production, we'll need the online version of it, w
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 preprocess_fn = partial(preprocess_drift, model=feature_model)
 
 cd_online = MMDDriftOnline(
@@ -1015,7 +1020,7 @@ cd_online = MMDDriftOnline(
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 # try the online detector on evaluation data
 results = []
 x_new, y_new = next(iter(val_loader))  # one batch
@@ -1028,7 +1033,7 @@ for x in x_new:
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 print([r['is_drift'] for r in results])
 ```
 :::
@@ -1048,7 +1053,7 @@ What if there are genuinely different images than the ones seen in training? Sup
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 image_dir = "ai_images"
 image_files = [
     f for f in os.listdir(image_dir)
@@ -1076,7 +1081,7 @@ plt.show()
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 # try the online detector on AI-generated image data
 results_ai = []
 sample_files = random.sample(image_files, min(32, len(image_files)))
@@ -1092,13 +1097,14 @@ for filename in sample_files:
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 print([r['is_drift'] for r in results_ai])
 ```
 :::
 
 ::: {.cell .code}
 ```python
+# runs on node-eval-online
 import matplotlib.pyplot as plt
 
 test_stats = [r['test_stat'] for r in results[:32]]
@@ -1151,7 +1157,7 @@ First, we need to save the change detection model:
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 from alibi_detect.saving import save_detector
 cd_online.reset_state()
 save_detector(cd_online, "cd")
@@ -1179,12 +1185,14 @@ nano eval-online-chi/fastapi_pt/app.py
 Near the top of this file, add the new import:
 
 ```python
+# runs on node-eval-online
 from alibi_detect.saving import load_detector
 ```
 
 and read in the change detector:
 
 ```python
+# runs on node-eval-online
 # Load the change detector from file
 cd = load_detector("cd")
 ```
@@ -1192,6 +1200,7 @@ cd = load_detector("cd")
 then, add the new metrics that we will report to Prometheus - 
 
 ```python
+# runs on node-eval-online
 # Counter for drift events
 drift_event_counter = Counter(
         'drift_events_total', 
@@ -1210,6 +1219,7 @@ We are going to do drift detection asynchronously - so that the user does not ha
 Near the top, add another import:
 
 ```python
+# runs on node-eval-online
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=2)  # can adjust max_workers as needed
 ```
@@ -1217,6 +1227,7 @@ executor = ThreadPoolExecutor(max_workers=2)  # can adjust max_workers as needed
 and, right below the definition of the Prometheus metrics, add a drift detection function:
 
 ```python
+# runs on node-eval-online
 def detect_drift_async(cd, x_np):
     cd_pred = cd.predict(x_np)
     test_stat = cd_pred['data']['test_stat']
@@ -1230,6 +1241,7 @@ def detect_drift_async(cd, x_np):
 Then, in the predict endpoint, right before `return` - add (with the appropriate indentation level)
 
 ```python
+# runs on node-eval-online
 # Submit to async drift detection thread
 x_np = image.squeeze(0).cpu().numpy()
 executor.submit(detect_drift_async, cd, x_np)
@@ -1399,7 +1411,7 @@ To see it in action, let's generate some requests from Food11:
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 food_11_data_dir = os.getenv("FOOD11_DATA_DIR", "Food-11")
 test_dataset = datasets.ImageFolder(root=os.path.join(food_11_data_dir, 'evaluation'))
 image_paths = [sample[0] for sample in test_dataset.samples]
@@ -1424,7 +1436,7 @@ and then some requests from the AI samples that are *not* similar to the Food11 
 
 ::: {.cell .code}
 ```python
-# runs in jupyter container on node-eval-online
+# runs on Jupyter container on node-eval-online
 image_dir = "ai_images"
 image_paths = [
     os.path.join(image_dir, fname)
@@ -1464,4 +1476,3 @@ docker compose -f eval-online-chi/docker/docker-compose-prometheus.yaml down
 ```
 
 :::
-
