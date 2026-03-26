@@ -110,17 +110,23 @@ http://A.B.C.D:9090
 
 but using the floating IP assigned to our instance in place of `A.B.C.D`. This will open the Prometheus web UI.
 
-First, let's find out about the services that this Prometheus instance is monitoring. From the menu, choose "Status" > "Targets" and note the FastAPI endpoint and its status.
+First, let's find out about the services that this Prometheus instance is monitoring. From the menu, choose "Status" > "Target Health" and note the FastAPI endpoint and its status.
 
-Next, let's look at some of the metrics data. Prometheus uses a query language called PromQL to query metrics, but we can find some metrics of interest without knowing any PromQL. From the menu, choose "Graph". Then, click on the ⋮ on the right side the query bar and choose "Explore metrics" to see some of the available metrics we can query. Find "http_requests_total" in the list and click on it to select it, and click "Execute".
+Next, let's look at some of the metrics data. Prometheus uses a query language called PromQL to query metrics, but we can find some metrics of interest without knowing any PromQL. 
 
-Prometheus will show us metrics related to all endpoints of the FastAPI service, but we are primarily interested in the metrics associated with the "/predict" endpoint. Copy the line
+* From the menu, choose "Query" and then "Table". 
+* Then, click on the ⋮ on the right side the query bar and choose "Explore metrics" to see some of the available metrics we can query. 
+* Find "http_requests_total" in the list and click on the `{+}` to insert it into the query bar, then click "Execute". 
+
+This will show us the cumulative number of HTTP requests processed by our FastAPI service.
+
+Prometheus shows us metrics related to all endpoints of the FastAPI service (including the "/metrics" endpoint it scrapes itself!), but we are primarily interested in the metrics associated with the "/predict" endpoint. You'll notice that one line in the table is:
 
 ```
 http_requests_total{handler="/predict", instance="fastapi_server:8000", job="food11", method="POST", status="2xx"}
 ```
 
-and paste *that* into the query bar. Hit Execute. 
+Copy this expression and paste *that* into the query bar, then click "Execute" to only show the successful (HTTP status code 200) requests for the "/predict" endpoint.
 
 Switch from the "Table" tab to the "Graph" tab to see a visualization of the cumulative number of requests served by this endpoint. Revisit the GourmetGram app again, and upload a few more images for classification; then execute the query in Prometheus again (or, after 15 seconds!) and confirm that it is incremented accordingly.
 
@@ -130,7 +136,7 @@ Instead of getting the cumulative count of requests, we may prefer to see the ra
 rate(http_requests_total{handler="/predict", instance="fastapi_server:8000", job="food11", method="POST", status="2xx"}[1m])
 ```
 
-into the query bar and click "Execute" to see the rate of requests per second, averaged over a 1 minute moving window. You can use the + and - buttons to adjust the range of the horizontal axis to the time interval for which you have measurements.
+into the query bar and click "Execute" to see the rate of successful "/predict" requests per second, averaged over a 1 minute moving window. You can use the + and - buttons to adjust the range of the horizontal axis to the time interval for which you have measurements.
 
 To see more, let's generate some more requests. We'll send some requests directly from this notebook to the FastAPI service.
 
@@ -171,16 +177,21 @@ rate(http_request_duration_seconds_sum{handler="/predict", job="food11"}[1m]) /
 rate(http_request_duration_seconds_count{handler="/predict", job="food11"}[1m])
 ```
 
-to see the average duration of HTTP requests averaged over a 1 minute window.
+to see the average duration of HTTP requests averaged over a 1 minute window. Here we are simply dividing the cumulative total time spent serving requets, by the cumulative number of served requests. Prometheus returns per-second rates, and we are averaging over a 1 minute window.
 
-Averages can be skewed, though - so let's also look at the median, using the query:
+Averages can be skewed, though - we can also look at the median, using the query:
 
 ```
 histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{handler="/predict", job="food11"}[1m]))
 ```
 
+where:
 
-or, to get a sense of the worst-case user experience, we can check the 95th percentile using the query:
+* `http_request_duration_seconds_bucket` is a histogram metric, i.e. a table of request times grouped into cumulative buckets. It counts "how many requests finished in 0.1s or less", "0.2s or less", and so on.
+* `rate(...[1m])` turns the raw counts into "requests per second" over a one-minute interval for each time range bucket.
+* `histogram_quantile(0.5, ...)` uses those buckets to get the 50th percentile (median) response time.
+
+Or, to get a sense of the worst-case user experience, we can check the 95th percentile using a similar query:
 
 ```
 histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{handler="/predict", job="food11"}[1m]))
@@ -192,7 +203,7 @@ histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{handler="/pre
 ::: {.cell .markdown}
 
 
-For ongoing monitoring, we can create a dashboard using Grafana.  In a browser, we'll visit 
+For ongoing monitoring, instead of ad-hoc queries, we will create a dashboard using Grafana.  In a browser, we'll visit 
 
 ```
 http://A.B.C.D:3000
@@ -200,36 +211,38 @@ http://A.B.C.D:3000
 
 but using the floating IP assigned to our instance in place of `A.B.C.D`. This will open the Grafana web UI.
 
-Sign in using the username `admin` and password `admin`. You will be prompted to change the initial password.
+Sign in using the username `admin` and password `admin`. You will be prompted to change the initial password, but you can choose to "Skip" that.
 
 Then, you'll configure it to connect to Prometheus: 
 
-* From the menu, choose: "Connections" > "Data Sources". 
-* Click "Add data source" and choose "Prometheus", then "Add new data source". 
-* Set URL to http://prometheus:9090.
+* From the menu, choose: "Connections" > "Add new connection". 
+* In the "Data sources" section, search for and choose "Prometheus", then "Add new data source". 
+* Set URL to http://prometheus:9090 and leave other settings at their default values.
 * Click "Save & Test"
 
 Next, we're going to build a dashboard! 
 
 * Click "Dashboards" > "Create dashboard" and "Add visualization".
 * Select your Prometheus data source.
-* Near the bottom, you will see the query builder for your Prometheus data source. Click the "Code" button to toggle from "builder mode" to "code (PromQL) mode". 
-* Put the following query in the box and then click "Run queries":
+* Near the bottom, you will see the query builder for your Prometheus data source. Click the "Code" button to toggle from "Builder" mode to "Code" mode. 
+* Put the following query (which computes average request duration in milliseconds) in the box where it says "Enter a PromQL query" and then click "Run queries":
 
 ```
 1000 * rate(http_request_duration_seconds_sum{handler="/predict", job="food11"}[1m]) / 
 rate(http_request_duration_seconds_count{handler="/predict", job="food11"}[1m])
 ```
 
-* At the top of the graph, adjust the visible time range to 15 minutes, so that you can see the data
-* On the right side, change the panel options: Set title to "Food11 average request duration (ms)"
-* When you are satisfied with the appearance, click "Save dashboard" and give your dashboard the title "Food11 Service Monitoring"
+* At the top of the graph, adjust the visible time range to "Last 15 minutes", so that you can see the data
+* On the right side, click the "Time series" type
+* Change the panel options: Set title to "Average request duration (ms)"
+* You can play with other visualization options. Try increasing "Fill opacity", set "Show points" to "never", change "Gradient mode" to "Hue", and make other visual changes. When you are satisfied with the appearance, click "Save dashboard" and give your dashboard the title "Food Classifier Service Monitoring"
 
-Now, you can click on "Dashboards" > "Food11 Service Monitoring" to see your dashboard.
+Now, you can click on "Dashboards" > "Food Classifier Service Monitoring" to see your dashboard.
 
 Let's add another panel, showing the median, 95th percentile, and 99th percentile request duration. 
 
 * Open the dashboard, and click "Edit" in the top right. Then click "Add" > "Visualization".
+* At the top of the graph, adjust the visible time range to 15 minutes, so that you will be able to see the data
 * In the query editor, paste this query and "Run queries":
 
 ```
@@ -247,10 +260,9 @@ Let's add another panel, showing the median, 95th percentile, and 99th percentil
 ```
 1000*histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{handler="/predict"}[1m]))
 ```
-* Click on "Legend" for each query, set it to "Custom", and name each series appropriately (e.g. "Median", "95th percentile", "99th percentile) 
-* On the right side, change the panel options: Set title to "Food11 request duration percentiles (ms)"
-* At the top of the graph, adjust the visible time range to 15 minutes, so that you can see the data
-* When you are satisfied with the appearance, click "Save dashboard" to save your changes.
+* Click on "Legend" for each query in the query builder, change it from "Auto" to "Custom", and name each series appropriately (e.g. "p50", "p95", "p99")
+* On the right side, select the "Time series" option again, then change the panel options: Set title to "Request duration percentiles (ms)"
+* Once again, you can play with visual options. When you are satisfied with the appearance, click "Save dashboard" to save your changes.
 
 
 Return to the dashboard. You can resize panels and drag them to place them in different positions for better visibility.
@@ -262,13 +274,13 @@ Return to the dashboard. You can resize panels and drag them to place them in di
 
 Repeat the process to add additional panels to your dashboard:
 
-* Requests per second:
+* "Requests per second":
 
 ```
 rate(http_requests_total{handler="/predict"}[1m])
 ```
 
-* and requests that return an error status or fail (this will have "no data" for now). You'll add two queries, one for error statuses and one for failed requests:
+* and "Failed requests per second", i.e. the rate of requests that return an error status or fail (this will have "no data" for now). You'll add two queries, one for error statuses and one for failed requests:
 
 ```
 # set this up as the first query
@@ -278,7 +290,9 @@ rate(http_requests_total{handler="/predict", status="4xx"}[1m])
 rate(http_requests_total{handler="/predict", status="5xx"}[1m])
 ```
 
-Return to the dashboard. You can resize panels and drag them to place them in different positions for better visibility.
+Click on the legend entry to change the color of these lines to a scary-looking red.
+
+Save and return to the dashboard. You can resize panels and drag them to place them in different positions for better visibility.
 
 Now, let's generate variable load - we will ramp up, then down, the load on the FastAPI service. While the cell below is running, observe the effect on your Grafana dashboard (you can set the dashboard to auto refresh with a frequency of 5 seconds, to make it easier to monitor!):
 
@@ -311,7 +325,7 @@ for load in load_pattern:
 
 ::: {.cell .markdown}
 
-When it is done, take a screenshot of the "Food11 Service Monitoring" dashboard for later reference.
+When it is done, take a screenshot of the "Food Classifier Service Monitoring" dashboard for later reference.
 
 :::
 
@@ -334,6 +348,18 @@ and click "Execute". Scroll down to see the server response, which will be
 * Code: 422
 * Details: Error: Unprocessable Entity
 
+Try again but this time, set the request body to
+
+```
+{"image": "bad data"}
+```
+
+and click "Execute". Scroll down to see the server response, which will be
+
+* Code: 500
+* Details: Error: Internal Server Error
+
+
 :::
 
 ::: {.cell .markdown}
@@ -343,22 +369,24 @@ and click "Execute". Scroll down to see the server response, which will be
 
 Grafana and/or Prometheus can also be configured with alerting - they can email, post a message in Slack, or execute various other notification actions based on operational metrics. As a demo, let's configure Grafana to alert when there is more than 20 error or failed responses/second for at least 1 minute.
 
-On your dashboard, click on the ⫶ in the "Error responses" panel, and under "More", choose "New Alert Rule". 
+On your dashboard, click on the ⫶ in the "Failed requests" panel, and under "More", choose "New Alert Rule". 
 
-* In "1. Enter alert rule name", name it "Error responses"
+* In "1. Enter alert rule name", name it "Failed requests"
 * In "2. Define query and alert condition":
-  * Delete the existing "C" and "D" expressions using the trash icon.
-  * Click "Add expression" > "Reduce". Under "Expressions" > "C Reduce", choose input A, function Last, and mode Replace non-numeric values with 0.
-  * Click "Add expression" > "Reduce". Under "Expressions" > "D Reduce", choose input B, function Last, and mode Replace non-numeric values with 0.
-  * Click "Add expression" > "Math". Under "Expressions" > "E Math", use: `$C + $D` to get the sum of the most recent values of A and B
-  * Click "Add expression" > "Threshold".  Under "Expressions" > "F Threshold", configure it to alert when input "E" (the "math" expression) is above 20. Click "Set F as alert condition".
-  * Click "Preview" to verify that no errors are raised.
-* In "3. Add folder and labels", create a new folder named "Food11"
-* In "4. Set evaluation behavior", create a new evaluation group named "Food11" with a 30s evaluation interval. Set the "Pending period" to 1m.
-* In "5. Configure notifications", choose to "View or create contact points". Since we have not configured this Grafana instance to actually send emails, we're going to create a "No-op" contact just to observe alerts within Grafana itself. Click "Create contact point", name it "No-op", select the "Webhook" integration, and put "http://localhost/" in the URL field. Save the contact point. Then, on the alert rule setup page, click the refresh icon next to the "Contact point" drop-down menu, and choose the "No-op" option
-* Click "Save rule and exit" in the top right.
+  * Change the "A" query to include both 4xx and 5xx response codes:
 
-Now, if you click on "Alerting" > "Alert rules", you should see a "Food11" folder with a "Food11" group inside it, and in it, your rule on "Error responses".
+```
+sum(rate(http_requests_total{handler="/predict", status=~"4xx|5xx"}[1m]))
+```
+  * Delete the existing "B" "C" and "D" expressions using the trash icon.
+  * Click "Add expression" > "Threshold".  Under "Expressions" > "B Threshold", configure it to alert when input "A" (the query result) is above 20. Click "Set B as alert condition".
+  * Click "Preview" to verify that no errors are raised.
+* In "3. Add folder and labels", create a new folder named "Food classifier prediction service"
+* In "4. Set evaluation behavior", create a new evaluation group named "Food classifier" with a 30s evaluation interval and click "Create". Set the "Pending period" to 1m.
+* In "5. Configure notifications", choose to "View or create contact points". Since we have not configured this Grafana instance to actually send emails, we're going to use the "empty" contact point.
+* Click "Save".
+
+Now, if you click on "Alerting" > "Alert rules", you should see a "Food classifier" folder with a "Food classifier prediction service" group inside it, and in it, your rule on "Failed requests".
 
 Let's generate some error responses to trigger this alert. We're executing a similar "ramp-up/ramp-down" request pattern as before, but sending either
 
@@ -403,7 +431,7 @@ While this runs:
 * and, on the "Alerting" > "Alert rules" page, watch the state of your alert rule and see how it cycles through these states. Although we have not configured email, we can see when an email (or other notification) *would* have been sent - when the alert is "Fired".
 
 
-When it is done, take a screenshot of the "Food11 Service Monitoring" dashboard for later reference.
+When it is done, take a screenshot of the "Food Classifier Service Monitoring" dashboard for later reference, with all three of the visual alert indicators visible on the dashboard.
 
 :::
 
@@ -412,7 +440,7 @@ When it is done, take a screenshot of the "Food11 Service Monitoring" dashboard 
 
 We built this dashboard with "ClickOps" but in general, we would want to keep dashboards along with the rest of our infrastructure configuration in version control. Fortunately, dashboard definitions can be exported as JSON files and loaded systematically in a Grafana container. 
 
-From your dashboard, click "Export" > "Export as JSON", and download the file. 
+From your dashboard, click "Export" > "Export as code", and download the file. 
 
 This JSON (along with some YAML configuration files) can be used to [provision Grafana](https://grafana.com/docs/grafana/latest/administration/provisioning/), so you can just bring it up (e.g. as part of a Docker Compose or a Kubernetes service) and have it ready to go. (We won't do this now, though.)
 
@@ -423,7 +451,7 @@ This JSON (along with some YAML configuration files) can be used to [provision G
 
 ### Monitor predictions
 
-In addition to standard "web service" metrics, we may want to monitor application-specific metrics during operation. For example, let's monitor the confidence of the model in its predictions, and the frequency with which it predicts each class.
+In addition to standard "web service" metrics, like error responses and request durations, we may want to monitor application-specific metrics during operation. For example, let's monitor the confidence of the model in its predictions, and the frequency with which it predicts each class.
 
 We'll need to make a few changes to our FastAPI service, since the auto-instrumentation of `prometheus-fastapi-instrumentator` does not include application-specific metrics.
 
@@ -518,10 +546,11 @@ We'll add another dashboard to Grafana to monitor the predictions. Instead of th
 
 In Grafana, click "Dashboards" > "New" > "Import" and where it says "Import via dashboard JSON model", paste:
 
+{% raw %}
 ```
 {
   "id": null,
-  "title": "Food11 Prediction Monitoring",
+  "title": "Food Classifier Prediction Monitoring",
   "timezone": "browser",
   "time": {
     "from": "now-15m",
@@ -575,9 +604,9 @@ In Grafana, click "Dashboards" > "New" > "Import" and where it says "Import via 
         "defaults": {
           "unit": "ops",
           "custom": {
-            "fillOpacity": 80,
+            "fillOpacity": 0,
             "stacking": {
-              "mode": "normal"
+              "mode": "none"
             }
           }
         },
@@ -645,8 +674,9 @@ In Grafana, click "Dashboards" > "New" > "Import" and where it says "Import via 
   ]
 }
 ```
+{% endraw %}
 
-then click "Load" and "Import". Now, you have a "Food11 Prediction Monitoring" dashboard in addition to your "Food11 Service" dashboard.
+then click "Load" and "Import". Now, you have a "Food Classifier Prediction Monitoring" dashboard in addition to your "Food Classifier Service" dashboard.
 
 Let's generate some requests to populate this dashboard with meaningful data:
 
@@ -674,8 +704,7 @@ for image_path in image_paths:
 
 ::: {.cell .markdown}
 
-
-When it is done, take a screenshot of the "Food11 Prediction Monitoring" dashboard for later reference.
+When it is done, take a screenshot of the "Food Classifier Prediction Monitoring" dashboard for later reference.
 
 :::
 
@@ -689,10 +718,10 @@ We'll try it now - on the dashboard, click on the ⫶ in the "Average Prediction
 
 * In "1. Enter alert rule name", name it "Low prediction confidence"
 * In "2. Define query and alert condition", set the Alert Condition to: When query is below 0.75
-* In "3. Add folder and labels", use "Food11"
-* In "4. Set evaluation behavior", use the evaluation group named "Food11". Set the "Pending period" to 1m. (In a real production setting, we would want this alert to fire only if prediction confidence is low for an extended period of time, like hours, days, or weeks, but in this example we use a small pending period so that we can see it in a shorter time frame!)
-* In "5. Configure notifications", use the "No-Op" notification option. (In a real production service, we might configure a notification to a webhook that would trigger rebuilding, for example.)
-* Click "Save rule and exit" in the top right.
+* In "3. Add folder and labels", use "Food classifier"
+* In "4. Set evaluation behavior", use the evaluation group named "Food classifier". Set the "Pending period" to 1m. (In a real production setting, we would want this alert to fire only if prediction confidence is low for an extended period of time, like hours, days, or weeks, but in this example we use a small pending period so that we can see it in a shorter time frame!)
+* In "5. Configure notifications", use the "empty" notification option. (In a real production service, we might configure a notification to a webhook that would trigger rebuilding, for example.)
+* Click "Save".
 
 Repeat the cell above this one to send requests for the test dataset. This will not trigger the alert, since the prediction confidence is high.
 
@@ -725,7 +754,7 @@ for _ in range(1000):
 
 ::: {.cell .markdown}
 
-Take a screenshot of this "Food11 Prediction Monitoring" dashboard showing where the alert condition is triggered and where it is fired.
+Take a screenshot of this "Food Classifier Prediction Monitoring" dashboard showing where the alert condition is triggered and where it is fired.
 
 :::
 
@@ -801,7 +830,7 @@ http://A.B.C.D:8080
 in a browser, but using the floating IP assigned to our instance in place of `A.B.C.D`. Click on "Docker containers" and then any individual container to see more details of its resource usage.
 
 
-4) Then, we'll import a [pre-built Grafana dashboard for cAdvisor](https://grafana.com/grafana/dashboards/19908-docker-container-monitoring-with-prometheus-and-cadvisor/).
+4) But, we'll prefer to monitor everything in Grafana, rather than having one system for inference service monitoring and another for infrastructure monitoring. To monitor our containers, we'll import a [pre-built Grafana dashboard for cAdvisor](https://grafana.com/grafana/dashboards/19908-docker-container-monitoring-with-prometheus-and-cadvisor/).
 
 * In Grafana, click "Dashboards" > "New" > "Import"
 * Enter this URL in the space where it says "Find and import dashboards for common applications at grafana.com/dashboards":
@@ -1229,7 +1258,7 @@ def detect_drift_async(cd, x_np):
         drift_event_counter.inc()
 ```
 
-Then, in the predict endpoint, right before `return` - add (with the appropriate indentation level)
+Then, in the predict endpoint, right before `return` - add (with the appropriate indentation level - and use spaces, not tabs, to indent)
 
 ```python
 # Submit to async drift detection thread
@@ -1304,10 +1333,11 @@ in a browser, but using the floating IP assigned to our instance. Click on "/met
 To monitor drift live, we can add a Grafana dashboard. In Grafana, click "Dashboards" > "New" > "Import" and where it says "Import via dashboard JSON model", paste:
 
 
+{% raw %}
 ```
 {
   "id": null,
-  "title": "Food11 Drift Monitoring",
+  "title": "Food Classifier Drift Monitoring",
   "timezone": "browser",
   "schemaVersion": 41,
   "version": 1,
@@ -1388,6 +1418,7 @@ To monitor drift live, we can add a Grafana dashboard. In Grafana, click "Dashbo
   ]
 }
 ```
+{% endraw %}
 
 Then click "Load" and "Import".
 
@@ -1449,7 +1480,7 @@ for _ in range(1000):
 
 ::: {.cell .markdown}
 
-When you see that drift events are detected, take a screenshot of the "Food11 Drift Monitoring" dashboard for later reference.
+When you see that drift events are detected, take a screenshot of the "Food Classifier Drift Monitoring" dashboard for later reference.
 
 :::
 
