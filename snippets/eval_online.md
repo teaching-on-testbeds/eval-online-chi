@@ -378,6 +378,8 @@ On your dashboard, click on the ⫶ in the "Failed requests" panel, and under "M
 ```
 sum(rate(http_requests_total{handler="/predict", status=~"4xx|5xx"}[1m]))
 ```
+
+  * Underneath the query, it should say: "Options ... Type: Instant". If it says "Type: Range", click on "Options" and change the type to "Instant".
   * Delete the existing "B" "C" and "D" expressions using the trash icon.
   * Click "Add expression" > "Threshold".  Under "Expressions" > "B Threshold", configure it to alert when input "A" (the query result) is above 20. Click "Set B as alert condition".
   * Click "Preview" to verify that no errors are raised.
